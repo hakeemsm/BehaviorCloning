@@ -1,30 +1,24 @@
 #**Behavioral Cloning** 
 
-##Writeup Template
-
-###You can use this file as a template for your writeup if you want to submit it as a markdown file, but feel free to use some other method and submit a pdf if you prefer.
-
 ---
 
 **Behavioral Cloning Project**
 
-The goals / steps of this project are the following:
+The goals / steps of this project were as follows:
 * Use the simulator to collect data of good driving behavior
 * Build, a convolution neural network in Keras that predicts steering angles from images
 * Train and validate the model with a training and validation set
 * Test that the model successfully drives around track one without leaving the road
-* Summarize the results with a written report
+* A written report with a summary of the performance
 
 
 [//]: # (Image References)
 
-[image1]: ./examples/placeholder.png "Model Visualization"
-[image2]: ./examples/placeholder.png "Grayscaling"
-[image3]: ./examples/placeholder_small.png "Recovery Image"
-[image4]: ./examples/placeholder_small.png "Recovery Image"
-[image5]: ./examples/placeholder_small.png "Recovery Image"
-[image6]: ./examples/placeholder_small.png "Normal Image"
-[image7]: ./examples/placeholder_small.png "Flipped Image"
+[image1]: ./examples/center.png "Center camera image"
+[image2]: ./examples/left.png "Left Image"
+[image3]: ./examples/right.png "Right Image"
+[image4]: ./examples/normal.png "Normal Image"
+[image5]: ./examples/flipped.png "Flipped Image"
 
 ## Rubric Points
 ###Here I will consider the [rubric points](https://review.udacity.com/#!/rubrics/432/view) individually and describe how I addressed each point in my implementation.  
@@ -38,6 +32,8 @@ My project includes the following files:
 * model.py containing the script to create and train the model
 * drive.py for driving the car in autonomous mode
 * model.h5 containing a trained convolution neural network 
+* run1.mp4 which is a recording of the driving in autonomous mode
+* drivinglog folder that contains the images and a csv file that includes the image names and steering angles
 * writeup_report.md or writeup_report.pdf summarizing the results
 
 ####2. Submission includes functional code
@@ -54,15 +50,15 @@ The model.py file contains the code for training and saving the convolution neur
 
 ####1. An appropriate model architecture has been employed
 
-My model consists of a convolution neural network with 3x3 filter sizes and depths between 32 and 128 (model.py lines 18-24) 
+My model consists of 5 ConvNets with kernel sizes ranging from 5x5 to 3x3 and four fully connected layers with units starting from 100 down to 1 (model.py lines 62-92) 
 
-The model includes RELU layers to introduce nonlinearity (code line 20), and the data is normalized in the model using a Keras lambda layer (code line 18). 
+The model includes RELU layers to introduce nonlinearity after each ConvNet (code lines 68-76), and the data is normalized in the model using a Keras lambda layer (code line 64). 
 
 ####2. Attempts to reduce overfitting in the model
 
-The model contains dropout layers in order to reduce overfitting (model.py lines 21). 
+The model contains dropout layers in order to reduce overfitting (model.py lines 82 & 86). 
 
-The model was trained and validated on different data sets to ensure that the model was not overfitting (code line 10-16). The model was tested by running it through the simulator and ensuring that the vehicle could stay on the track.
+The model was trained and validated on different data sets captured from training with varying number of loops to ensure that the model was not overfitting (code line 10-16). The model was tested by running it through the simulator and ensuring that the vehicle could stay on the track.
 
 ####3. Model parameter tuning
 
@@ -70,7 +66,7 @@ The model used an adam optimizer, so the learning rate was not tuned manually (m
 
 ####4. Appropriate training data
 
-Training data was chosen to keep the vehicle driving on the road. I used a combination of center lane driving, recovering from the left and right sides of the road ... 
+Training data was chosen to keep the vehicle driving on the road. I used a combination of center lane driving, recovering from the left and right sides of the road by adding a small correction to the left and right angles
 
 For details about how I created the training data, see the next section. 
 
@@ -78,52 +74,75 @@ For details about how I created the training data, see the next section.
 
 ####1. Solution Design Approach
 
-The overall strategy for deriving a model architecture was to ...
+The overall strategy for deriving a model architecture was
 
-My first step was to use a convolution neural network model similar to the ... I thought this model might be appropriate because ...
+A CNN similar to LeNet for MNIST but with more ConvNets and fully connected layers. This approach yielded good results for the German traffic signs classification with minimal overfitting and validation loss
 
-In order to gauge how well the model was working, I split my image and steering angle data into a training and validation set. I found that my first model had a low mean squared error on the training set but a high mean squared error on the validation set. This implied that the model was overfitting. 
+The image and steering angle data was split into training and validation sets (line 20). The model was overfitting when only the center images and angles  were used for training. It improved vastly after I took the left and right angles into consideration and added a small correction to each
 
-To combat the overfitting, I modified the model so that ...
+Tweaking the epoch and batch sizes also helped with overfitting issues. I started out with 10 epochs intially and observed an overfit. The model was refined by training various numbers for epoch and finally settled with 3 epochs as it gave good performance overall
 
-Then I ... 
 
-The final step was to run the simulator to see how well the car was driving around track one. There were a few spots where the vehicle fell off the track... to improve the driving behavior in these cases, I ....
+The final step was to run the simulator to see how well the car was driving around track one. There were a few spots where the vehicle fell off the track, to improve the driving behavior in these cases, I captured more training data and also swerved the car left and right bringing back to the center so that the model can observe different angles
 
 At the end of the process, the vehicle is able to drive autonomously around the track without leaving the road.
 
 ####2. Final Model Architecture
 
-The final model architecture (model.py lines 18-24) consisted of a convolution neural network with the following layers and layer sizes ...
+The final model architecture (model.py lines 62-92) consisted of a convolution neural network with the following layers and layer sizes
 
-Here is a visualization of the architecture (note: visualizing the architecture is optional according to the project rubric)
-
-![alt text][image1]
+| Layer         		|     Description	        					| 
+|:---------------------:|:---------------------------------------------:| 
+| Layer1:
+|   Input         		| 160x320x3 RGB image   						| 
+|   Convolution         | 2x2 stride, valid padding 	                |
+|   Activation		    | RELU											|
+| Layer2:
+|   Convolution 	    | 2x2 stride, valid padding                     |
+|   Activation          | RELU                                          |
+|   Flatten             |                                               |
+| Layer3:
+|   Convolution 		| 2x2 stride, valid padding        				|
+|   Activation          | RELU                                          |
+| Layer4:
+|   Convolution 		| 1x1 stride, valid padding      				|
+|   Activation          | RELU                                          |
+| Layer5:
+|   Convolution 		| 1x1 stride, valid padding         			|
+|Flatten				|           									|
+| Layer6:				|												|
+|	Fully connected		| 100 units										|
+|Dropout
+|  Layer7:				|												|
+|	Fully connected		| 50 units										|
+|Dropout
+|  Layer8:				|												|
+|	Fully connected		| 10 units										|
+|  Layer9:				|												|
+|	Fully connected		| 1 unit										|
 
 ####3. Creation of the Training Set & Training Process
 
 To capture good driving behavior, I first recorded two laps on track one using center lane driving. Here is an example image of center lane driving:
 
+![alt text][image1]
+
+I then recorded the vehicle recovering from the left side and right sides of the road back to center so that the vehicle would learn to move back to center when encoungtering a curve in the road. These images capture the left and right camera angles for a recovery
+
 ![alt text][image2]
-
-I then recorded the vehicle recovering from the left side and right sides of the road back to center so that the vehicle would learn to .... These images show what a recovery looks like starting from ... :
-
 ![alt text][image3]
-![alt text][image4]
+
+
+To augment the data sat, I also flipped images and angles so that the training data is captured from all angles. For example, here is an image that has then been flipped:
+
 ![alt text][image5]
 
-Then I repeated this process on track two in order to get more data points.
+and here is the original image
 
-To augment the data sat, I also flipped images and angles thinking that this would ... For example, here is an image that has then been flipped:
+![alt text][image4]
 
-![alt text][image6]
-![alt text][image7]
+After the collection process, I had 3936 data points. I then preprocessed this data by cropping the images and normalizing them (lines 64 & 66)
 
-Etc ....
+I finally randomly shuffled the data set and put 20% of the data into a validation set. 
 
-After the collection process, I had X number of data points. I then preprocessed this data by ...
-
-
-I finally randomly shuffled the data set and put Y% of the data into a validation set. 
-
-I used this training data for training the model. The validation set helped determine if the model was over or under fitting. The ideal number of epochs was Z as evidenced by ... I used an adam optimizer so that manually training the learning rate wasn't necessary.
+I used this training data for training the model. The validation set helped determine if the model was over or under fitting. The ideal number of epochs was 3 as evidenced by the validation loss and the vehicle always being in the center of the road while driving I used an adam optimizer so that manually training the learning rate wasn't necessary.
