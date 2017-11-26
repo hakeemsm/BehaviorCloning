@@ -142,4 +142,4 @@ plt.show()
 
 #save model to disk
 model.save('model.h5')
-plot_model(model, to_file='model.png')
+plot_model(model, to_file='model.png', show_layer_names=True, show_shapes=True)

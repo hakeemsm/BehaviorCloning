@@ -14,11 +14,13 @@ The goals / steps of this project were as follows:
 
 [//]: # (Image References)
 
-[image1]: ./examples/center.png "Center camera image"
-[image2]: ./examples/left.png "Left Image"
-[image3]: ./examples/right.png "Right Image"
-[image4]: ./examples/normal.png "Normal Image"
-[image5]: ./examples/flipped.png "Flipped Image"
+
+[image1]: ./examples/model.png "Model Visualization"
+[image2]: ./examples/center.png "Center camera image"
+[image3]: ./examples/left.png "Left Image"
+[image4]: ./examples/right.png "Right Image"
+[image5]: ./examples/normal.png "Normal Image"
+[image6]: ./examples/flipped.png "Flipped Image"
 
 ## Rubric Points
 ###Here I will consider the [rubric points](https://review.udacity.com/#!/rubrics/432/view) individually and describe how I addressed each point in my implementation.  
@@ -33,8 +35,7 @@ My project includes the following files:
 * drive.py for driving the car in autonomous mode
 * model.h5 containing a trained convolution neural network 
 * run1.mp4 which is a recording of the driving in autonomous mode
-* drivinglog folder that contains the images and a csv file that includes the image names and steering angles
-* writeup_report.md or writeup_report.pdf summarizing the results
+* writeup_report.md summarizing the results
 
 ####2. Submission includes functional code
 Using the Udacity provided simulator and my drive.py file, the car can be driven autonomously around the track by executing 
@@ -56,7 +57,7 @@ The model includes RELU layers to introduce nonlinearity after each ConvNet (cod
 
 ####2. Attempts to reduce overfitting in the model
 
-The model contains dropout layers in order to reduce overfitting (model.py lines 82 & 86). 
+The model contains dropout layers in order to reduce overfitting (model.py lines 82 & 86). Regularizers have also been added to the first three fully connected layers to reduce overfitting
 
 The model was trained and validated on different data sets captured from training with varying number of loops to ensure that the model was not overfitting (code line 10-16). The model was tested by running it through the simulator and ensuring that the vehicle could stay on the track.
 
@@ -76,7 +77,7 @@ For details about how I created the training data, see the next section.
 
 The overall strategy for deriving a model architecture was
 
-A CNN similar to LeNet for MNIST but with more ConvNets and fully connected layers. This approach yielded good results for the German traffic signs classification with minimal overfitting and validation loss
+A CNN similar to NVIDIA's implementation of the [DAVE2](http://images.nvidia.com/content/tegra/automotive/images/2016/solutions/pdf/end-to-end-dl-using-px.pdf) system, albeit with different kernel sizes. This approach yielded good results for the validation loss and the car was on the road at all times in autonomous mode.
 
 The image and steering angle data was split into training and validation sets (line 20). The model was overfitting when only the center images and angles  were used for training. It improved vastly after I took the left and right angles into consideration and added a small correction to each
 
@@ -87,61 +88,87 @@ The final step was to run the simulator to see how well the car was driving arou
 
 At the end of the process, the vehicle is able to drive autonomously around the track without leaving the road.
 
+Some other architectures such as LeNet and [another](https://github.com/commaai/research/blob/master/train_steering_model.py) from comma.ai were also tried but the existing network had the lowest validation loss of them all 
+
 ####2. Final Model Architecture
+
 
 The final model architecture (model.py lines 62-92) consisted of a convolution neural network with the following layers and layer sizes
 
 | Layer         		|     Description	        					| 
 |:---------------------:|:---------------------------------------------:| 
 | Layer1:
-|   Input         		| 160x320x3 RGB image   						| 
+|   Input         		| (None,65,320,3) RGB image   					| 
 |   Convolution         | 2x2 stride, valid padding 	                |
 |   Activation		    | RELU											|
+|   Output         		| (None,31,158,24)   				        	| 
 | Layer2:
+|   Input         		| (None,31,158,24)   		        			| 
 |   Convolution 	    | 2x2 stride, valid padding                     |
 |   Activation          | RELU                                          |
-|   Flatten             |                                               |
+|   Output         		| (None,14,77,36)              					| 
 | Layer3:
+|   Input         		| (None,14,77,36)   		        			| 
 |   Convolution 		| 2x2 stride, valid padding        				|
 |   Activation          | RELU                                          |
+|   Output         		| (None,5,37,48)            					| 
 | Layer4:
+|   Input         		| (None,5,37,48)             					| 
 |   Convolution 		| 1x1 stride, valid padding      				|
 |   Activation          | RELU                                          |
+|   Output         		| (None,3,35,64)            					|
 | Layer5:
+|   Input         		| (None,3,35,64)            					|
 |   Convolution 		| 1x1 stride, valid padding         			|
+|   Output         		| (None,1,33,64)            					|
 |Flatten				|           									|
+|   Input         		| (None,1,33,64)            					|
+|   Output         		| (None,2112)                					|
 | Layer6:				|												|
-|	Fully connected		| 100 units										|
-|Dropout
+|	Fully connected		| 100 units, l2 Kernel regularizer, l1          |
+|                          activity regularizer							|
+|   Input         		| (None,2112)                					|
+|   Output         		| (None,100)                					|
+|Dropout (0.5)
 |  Layer7:				|												|
-|	Fully connected		| 50 units										|
-|Dropout
+|	Fully connected		| 50 units, l2 Kernel regularizer, l1           |
+|                          activity regularizer							|										
+|   Input         		| (None,100)            		    			|
+|   Output         		| (None,50)            	        				|
+|Dropout (0.5)
 |  Layer8:				|												|
-|	Fully connected		| 10 units										|
+|	Fully connected		| 10 units, l2 Kernel regularizer, l1           |
+|                          activity regularizer							|										
+|   Input         		| (None,50)                 					|
+|   Output         		| (None,10)                    					|
 |  Layer9:				|												|
 |	Fully connected		| 1 unit										|
+
+Here is a visualization of the model 
+
+![alt text][image1]
 
 ####3. Creation of the Training Set & Training Process
 
 To capture good driving behavior, I first recorded two laps on track one using center lane driving. Here is an example image of center lane driving:
 
-![alt text][image1]
+![alt text][image2]
 
 I then recorded the vehicle recovering from the left side and right sides of the road back to center so that the vehicle would learn to move back to center when encoungtering a curve in the road. These images capture the left and right camera angles for a recovery
 
-![alt text][image2]
 ![alt text][image3]
+![alt text][image4]
 
 
 To augment the data sat, I also flipped images and angles so that the training data is captured from all angles. For example, here is an image that has then been flipped:
 
-![alt text][image5]
+![alt text][image6]
 
 and here is the original image
 
-![alt text][image4]
+![alt text][image5]
 
-After the collection process, I had 3936 data points. I then preprocessed this data by cropping the images and normalizing them (lines 64 & 66)
+After the collection process, I had 10185 images that were captured by driving the car around the loop twice. I then preprocessed this data by cropping the images and normalizing them (lines 64 & 66)
 
 I finally randomly shuffled the data set and put 20% of the data into a validation set. 
 
