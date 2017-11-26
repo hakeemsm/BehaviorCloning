@@ -1,16 +1,14 @@
-import os
 import csv
 import cv2
+import keras
+import matplotlib.pyplot as plt
 import numpy as np
 import sklearn
-import keras
-from keras.models import Sequential
-from keras.layers import Flatten, Dense, Lambda, Conv2D, ELU, Dropout, Cropping2D
 from keras.callbacks import Callback
-from keras.callbacks import ModelCheckpoint
+from keras.layers import Conv2D, Cropping2D, Dense, Dropout, Flatten, Lambda
+from keras.models import Sequential
 from keras.utils import plot_model
 from sklearn.model_selection import train_test_split
-import matplotlib.pyplot as plt
 
 samples = []
 
@@ -63,9 +61,9 @@ def generator(samples, batch_size=32):
                 center_name = img_path + batch_sample[0].split('/')[-1]
                 left_name = img_path + batch_sample[1].split('/')[-1]
                 right_name = img_path + batch_sample[2].split('/')[-1]
-                center_image = cv2.imread(center_name)         #read center image
-                left_image = cv2.imread(left_name)             #read left image 
-                right_image = cv2.imread(right_name)           #read right image 
+                center_image = cv2.cvtColor(cv2.imread(center_name),cv2.COLOR_BGR2RGB)         #read center image
+                left_image = cv2.cvtColor(cv2.imread(left_name),cv2.COLOR_BGR2RGB)             #read left image 
+                right_image = cv2.cvtColor(cv2.imread(right_name),cv2.COLOR_BGR2RGB)           #read right image 
                 center_angle = float(batch_sample[3])
                 left_angle = center_angle + correction         #apply correction to left angle 
                 right_angle = center_angle - correction        #apply correction to right measurement 
@@ -128,7 +126,7 @@ history_object = model.fit_generator(train_generator,
                     steps_per_epoch = len(train_samples)/32,
                     epochs = 5,
                     validation_data = (validation_generator),              
-                    validation_steps = len(validation_samples)/32, verbose=1, callbacks=callbacks)
+                    validation_steps = len(validation_samples)/32, verbose=1)
 
 print(history_object.history.keys())
 ### plot the training and validation loss for each epoch

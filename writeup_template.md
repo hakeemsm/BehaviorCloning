@@ -90,6 +90,8 @@ At the end of the process, the vehicle is able to drive autonomously around the 
 
 Some other architectures such as LeNet and [another](https://github.com/commaai/research/blob/master/train_steering_model.py) from comma.ai were also tried but the existing network had the lowest validation loss of them all 
 
+After training the model, a visualization of the architecture is generated using plot_model from keras.utils package (line: 143)
+
 ####2. Final Model Architecture
 
 
