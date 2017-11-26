@@ -3,8 +3,12 @@ import csv
 import cv2
 import numpy as np
 import sklearn
+import keras
 from keras.models import Sequential
 from keras.layers import Flatten, Dense, Lambda, Conv2D, ELU, Dropout, Cropping2D
+from keras.callbacks import Callback
+from keras.callbacks import ModelCheckpoint
+from keras.utils import plot_model
 from sklearn.model_selection import train_test_split
 import matplotlib.pyplot as plt
 
@@ -19,6 +23,21 @@ with open('./drivinglog/driving_log.csv') as csvfile:
 #Train and test split
 train_samples, validation_samples = train_test_split(samples, test_size=0.2)
 
+class EarlyStoppingByValLoss(Callback):
+    def __init__(self, monitor='val_loss', value=0.0001, verbose=0):
+        super(Callback, self).__init__()
+        self.monitor = monitor
+        self.value = value
+        self.verbose = verbose
+
+    def on_epoch_end(self, epoch, logs={}):
+        current = logs.get(self.monitor)
+        if current is None:
+            warnings.warn("Early stopping requires %s available " % self.monitor, RuntimeWarning)
+        if current < self.value:
+            if self.verbose > 0:
+                print("Epoch %05d: early stopping THR" % epoch)
+            self.model.stop_training = True
 
 def generator(samples, batch_size=32):
     """
@@ -31,14 +50,15 @@ def generator(samples, batch_size=32):
     """
     num_samples = len(samples)
     img_path = './drivinglog/IMG/'  #path containing the images
+    
+    correction = 0.2
     while 1: # Loop forever so the generator never terminates
         sklearn.utils.shuffle(samples)
         for offset in range(0, num_samples, batch_size):
             batch_samples = samples[offset:offset+batch_size]
             images = []
             measurements = []
-            correction = 0.1
-            
+                        
             for batch_sample in batch_samples:
                 center_name = img_path + batch_sample[0].split('/')[-1]
                 left_name = img_path + batch_sample[1].split('/')[-1]
@@ -85,15 +105,15 @@ model.add(Conv2D(64, (3, 3), activation="relu"))                    #layer5 Conv
 
 model.add(Flatten())    #flatten the output from previous layer
 
-model.add(Dense(100))   #fully connected layer1
+model.add(Dense(100, kernel_regularizer=keras.regularizers.l2(0.00001), activity_regularizer=keras.regularizers.l1(0.00001)))   #fully connected layer1
 
 model.add(Dropout(0.5)) #dropout1 
 
-model.add(Dense(50))    #fully connected layer2
+model.add(Dense(50, kernel_regularizer=keras.regularizers.l2(0.00001), activity_regularizer=keras.regularizers.l1(0.00001)))    #fully connected layer2
 
 model.add(Dropout(0.5)) #dropout2
 
-model.add(Dense(10))    #fully connected layer3
+model.add(Dense(10, kernel_regularizer=keras.regularizers.l2(0.00001), activity_regularizer=keras.regularizers.l1(0.00001)))    #fully connected layer3
 
 model.add(Dense(1))     #fully connected layer4
 
@@ -101,12 +121,14 @@ model.summary()
 
 model.compile(loss='mse', optimizer='adam') #train the model with Adam optimizer
 
+callbacks = [EarlyStoppingByValLoss(monitor='val_loss', value=0.0015, verbose=1)]
+
 #fit model and visualize loss
 history_object = model.fit_generator(train_generator,                     
                     steps_per_epoch = len(train_samples)/32,
-                    epochs = 3,
+                    epochs = 5,
                     validation_data = (validation_generator),              
-                    validation_steps = len(validation_samples)/32, verbose=1)
+                    validation_steps = len(validation_samples)/32, verbose=1, callbacks=callbacks)
 
 print(history_object.history.keys())
 ### plot the training and validation loss for each epoch
@@ -120,3 +142,4 @@ plt.show()
 
 #save model to disk
 model.save('model.h5')
+plot_model(model, to_file='model.png')
